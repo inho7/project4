@@ -1,0 +1,70 @@
+name: Fetch News Data  # 뉴스 데이터 수집
+
+on:
+  schedule:
+    - cron: '*/ * 1* * *'  # 20분마다 실행 (UTC 기준)
+  workflow_dispatch:  # 수동 실행 가능하게 추가 (옵션)
+  push:
+    branches:
+      - main
+
+jobs:
+  run_script:
+    runs-on: ubuntu-latest  # 최신 Ubuntu 환경에서 실행
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3  # 리포지토리 체크아웃
+
+      - name: Set up Python
+        uses: actions/setup-python@v4  # Python 환경 설정
+        with:
+          python-version: '3.9'  # 원하는 Python 버전 설정
+
+      - name: Upgrade pip and setuptools
+        run: |
+          pip install --upgrade pip setuptools
+
+      - name: Install wheel
+        run: pip install wheel
+
+      - name: Install dependencies
+        run: |
+          pip install requests
+          pip install beautifulsoup4
+          pip install numpy==1.21.2
+          pip install gensim==3.8.3
+          pip install flask
+          pip install selenium
+          pip install scipy==1.7.3
+          pip install webdriver-manager  # webdriver-manager 설치
+
+      - name: Install Google Chrome
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y wget curl unzip
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome-stable_current_amd64.deb
+          sudo apt --fix-broken install -y
+
+      - name: Run the news script
+        run: |
+          python news_script.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          
+          # Pull the latest changes from remote before pushing
+          git pull origin main --rebase  # --rebase로 로컬 변경 사항을 원격 변경 사항 위에 적용
+
+          git add *.db
+          git diff-index --quiet HEAD || git commit -m "Update news data (auto)"
+          git push origin main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+permissions:
+  contents: write  # 리포지토리의 컨텐츠에 대한 쓰기 권한
