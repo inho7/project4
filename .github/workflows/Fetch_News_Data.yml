@@ -2,7 +2,7 @@ name: Fetch News Data  # 뉴스 데이터 수집
 
 on:
   schedule:
-    - cron: '*/ * 1* * *'  # 20분마다 실행 (UTC 기준)
+     - cron: '*/20 * * * *'  # 20분마다 실행 (UTC 기준)
   workflow_dispatch:  # 수동 실행 가능하게 추가 (옵션)
   push:
     branches:
